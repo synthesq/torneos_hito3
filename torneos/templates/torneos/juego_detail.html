@@ -1,0 +1,21 @@
+{% extends 'torneos/base.html' %}
+{% block title %}{{ juego.nombre }}{% endblock %}
+{% block content %}
+<h1>{{ juego.nombre }}</h1>
+<ul class="list-unstyled">
+  <li><strong>Género:</strong> {{ juego.genero }}</li>
+  <li><strong>Desarrollador:</strong> {{ juego.desarrollador }}</li>
+  <li><strong>Lanzamiento:</strong> {{ juego.fecha_lanzamiento|date:"d/m/Y" }}</li>
+  <li><strong>Activo:</strong> {{ juego.activo|yesno:"Sí,No" }}</li>
+</ul>
+<h2 class="h4 mt-4">Torneos de este juego</h2>
+<ul>
+  {% for torneo in juego.torneos.all %}
+    <li><a href="{% url 'torneos:torneo_detail' torneo.pk %}">{{ torneo.nombre }}</a> ({{ torneo.get_estado_display }})</li>
+  {% empty %}
+    <li class="text-muted">Sin torneos todavía.</li>
+  {% endfor %}
+</ul>
+<a class="btn btn-outline-secondary" href="{% url 'torneos:juego_list' %}">Volver</a>
+<a class="btn btn-outline-primary" href="{% url 'torneos:juego_update' juego.pk %}">Editar</a>
+{% endblock %}

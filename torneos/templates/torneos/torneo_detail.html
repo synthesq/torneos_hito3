@@ -1,0 +1,15 @@
+{% extends 'torneos/base.html' %}
+{% block title %}{{ torneo.nombre }}{% endblock %}
+{% block content %}
+<h1>{{ torneo.nombre }}</h1>
+<ul class="list-unstyled">
+  <li><strong>Juego:</strong> <a href="{% url 'torneos:juego_detail' torneo.juego.pk %}">{{ torneo.juego.nombre }}</a></li>
+  <li><strong>Inicio:</strong> {{ torneo.fecha_inicio|date:"d/m/Y" }}</li>
+  <li><strong>Término:</strong> {{ torneo.fecha_fin|date:"d/m/Y" }}</li>
+  <li><strong>Premio:</strong> ${{ torneo.premio }} CLP</li>
+  <li><strong>Máx. participantes:</strong> {{ torneo.max_participantes }}</li>
+  <li><strong>Estado:</strong> {{ torneo.get_estado_display }}</li>
+</ul>
+<a class="btn btn-outline-secondary" href="{% url 'torneos:torneo_list' %}">Volver</a>
+<a class="btn btn-outline-primary" href="{% url 'torneos:torneo_update' torneo.pk %}">Editar</a>
+{% endblock %}
