@@ -1,81 +1,73 @@
-<!doctype html>
+{% load static %}
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Torneos{% endblock %} | Admin</title>
-  
-  <!-- Bootstrap 5, Bootstrap Icons & Google Fonts -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-  
-  <style>
-    body {
-      background-color: #f4f6f9;
-      font-family: 'Poppins', sans-serif;
-      color: #333;
-    }
-    .navbar {
-      box-shadow: 0 2px 4px rgba(0,0,0,.08);
-    }
-    .navbar-brand {
-      font-weight: 600;
-      letter-spacing: 0.5px;
-    }
-    .card {
-      border-radius: 12px;
-    }
-    .table-hover tbody tr:hover {
-      background-color: #f8f9fa;
-      transition: background-color 0.2s ease;
-    }
-    .btn {
-      border-radius: 6px;
-      font-weight: 500;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}App{% endblock %} - SynthesQ</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{% static 'css/custom.css' %}">
 </head>
-<body>
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 py-3">
-    <div class="container">
-      <a class="navbar-brand d-flex align-items-center gap-2" href="{% url 'torneos:juego_list' %}">
-        <i class="bi bi-controller text-primary fs-4"></i>
-        <span>SynthesQ Torneos</span>
-      </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto gap-2">
-          <li class="nav-item">
-            <a class="nav-link {% if request.resolver_match.url_name == 'juego_list' %}active{% endif %}" href="{% url 'torneos:juego_list' %}">
-              <i class="bi bi-joystick me-1"></i> Juegos
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark py-3">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'torneo_list' %}">
+                <i class="bi bi-controller"></i> SynthesQ Torneos
             </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link {% if request.resolver_match.url_name == 'torneo_list' %}active{% endif %}" href="{% url 'torneos:torneo_list' %}">
-              <i class="bi bi-trophy me-1"></i> Torneos
-            </a>
-          </li>
-        </ul>
-      </div>
-    </div>
-  </nav>
-
-  <main class="container pb-5">
-    {% if messages %}
-      {% for message in messages %}
-        <div class="alert alert-success alert-dismissible fade show shadow-sm border-0" role="alert">
-          <i class="bi bi-check-circle-fill me-2"></i>{{ message }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="{% url 'torneo_list' %}">
+                            <i class="bi bi-trophy"></i> Torneos
+                        </a>
+                    </li>
+                    {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link text-white-50" href="/admin/" target="_blank">
+                            <i class="bi bi-gear"></i> Admin (Juegos)
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav ms-auto gap-2">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item d-flex align-items-center">
+                            <span class="text-white-50 me-3"><i class="bi bi-person me-1"></i>Hola, {{ user.username }}</span>
+                        </li>
+                        <li class="nav-item">
+                            <form method="post" action="{% url 'logout' %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-light btn-sm mt-1">Cerrar Sesión</button>
+                            </form>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="btn btn-primary btn-sm mt-1" href="{% url 'login' %}">Iniciar Sesión</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
         </div>
-      {% endfor %}
-    {% endif %}
+    </nav>
     
-    {% block content %}{% endblock %}
-  </main>
-
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <div class="container mt-4">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show border-0 shadow-sm d-flex align-items-center">
+                    <i class="bi bi-check-circle-fill text-success me-2 fs-5"></i>
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        {% block content %}{% endblock %}
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
