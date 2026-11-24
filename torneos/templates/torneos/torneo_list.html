@@ -1,0 +1,219 @@
+{% extends 'torneos/base.html' %}
+{% load formatos %}
+{% block title %}Torneos{% endblock %}
+{% block content %}
+<div class="page-hero d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+  <div>
+    <h1 class="h2 mb-1">Gestión de <span class="text-gradient">Torneos</span></h1>
+    <p class="text-secondary mb-0">Busca, filtra y administra los torneos de cada juego.</p>
+  </div>
+  <div class="d-flex gap-2">
+    {% if user.is_authenticated %}
+    <a class="btn btn-outline-secondary" href="{% url 'torneo_export' %}?{{ request.GET.urlencode }}" title="Descargar lo que ves como CSV (Excel)">
+      <i class="bi bi-download me-1"></i> Exportar CSV
+    </a>
+    <a class="btn btn-primary shadow-sm px-3" href="{% url 'torneo_create' %}">
+      <i class="bi bi-plus-lg me-1"></i> Nuevo torneo
+    </a>
+    {% else %}
+    <a class="btn btn-outline-primary" href="{% url 'login' %}"><i class="bi bi-lock me-1"></i> Inicia sesión para gestionar</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="card stat-card h-100"><div class="d-flex align-items-center gap-3">
+      <div class="stat-icon"><i class="bi bi-trophy"></i></div>
+      <div><div class="stat-value">{{ stats.total }}</div><div class="stat-label">Torneos</div></div>
+    </div></div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card stat-card h-100"><div class="d-flex align-items-center gap-3">
+      <div class="stat-icon"><i class="bi bi-lightning-charge"></i></div>
+      <div><div class="stat-value">{{ stats.activos }}</div><div class="stat-label">Activos</div></div>
+    </div></div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card stat-card h-100"><div class="d-flex align-items-center gap-3">
+      <div class="stat-icon"><i class="bi bi-cash-coin"></i></div>
+      <div><div class="stat-value">${{ stats.premio_total|clp }}</div><div class="stat-label">En premios (CLP)</div></div>
+    </div></div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card stat-card h-100"><div class="d-flex align-items-center gap-3">
+      <div class="stat-icon"><i class="bi bi-people"></i></div>
+      <div><div class="stat-value">{{ stats.cupos_total|clp }}</div><div class="stat-label">Cupos totales</div></div>
+    </div></div>
+  </div>
+</div>
+
+<form method="get" class="card filtros p-3 mb-4" role="search">
+  <div class="row g-2 align-items-center">
+    <div class="col-12 col-lg-4">
+      <div class="input-group">
+        <span class="input-group-text bg-transparent"><i class="bi bi-search"></i></span>
+        <input id="buscador" type="search" name="q" value="{{ f.q }}" class="form-control" placeholder="Buscar torneo o juego…" autocomplete="off">
+        <span class="input-group-text bg-transparent d-none d-lg-flex"><span class="kbd-hint">/</span></span>
+      </div>
+    </div>
+    <div class="col-6 col-lg-2">
+      <select name="juego" class="form-select" data-autosubmit aria-label="Juego">
+        <option value="">Todos los juegos</option>
+        {% for j in juegos %}<option value="{{ j.pk }}" {% if f.juego == j.pk|stringformat:"s" %}selected{% endif %}>{{ j.nombre }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-lg-2">
+      <select name="estado" class="form-select" data-autosubmit aria-label="Estado">
+        <option value="">Todos los estados</option>
+        {% for valor, nombre in estados %}<option value="{{ valor }}" {% if f.estado == valor %}selected{% endif %}>{{ nombre }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-6 col-lg-2">
+      <select name="activo" class="form-select" data-autosubmit aria-label="Activo">
+        <option value="">Activos e inactivos</option>
+        <option value="1" {% if f.activo == '1' %}selected{% endif %}>Solo activos</option>
+        <option value="0" {% if f.activo == '0' %}selected{% endif %}>Solo inactivos</option>
+      </select>
+    </div>
+    <div class="col-6 col-lg-2">
+      <select name="orden" class="form-select" data-autosubmit aria-label="Ordenar por">
+        {% for valor, nombre in ordenes %}<option value="{{ valor }}" {% if f.orden == valor %}selected{% endif %}>{{ nombre }}</option>{% endfor %}
+      </select>
+    </div>
+  </div>
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+    <div class="small text-secondary">
+      {% if is_paginated %}Mostrando {{ page_obj.start_index }}–{{ page_obj.end_index }} de {{ stats.total }} torneos{% else %}{{ stats.total }} torneo{{ stats.total|pluralize }}{% endif %}
+      {% if hay_filtros %}<span class="mx-1">·</span><a href="{% url 'torneo_list' %}" class="text-decoration-none"><i class="bi bi-x-circle me-1"></i>Limpiar filtros</a>{% endif %}
+    </div>
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-sm btn-primary px-3"><i class="bi bi-funnel me-1"></i> Aplicar</button>
+      <div class="btn-group btn-group-sm" role="group" aria-label="Tipo de vista">
+        <button type="button" class="btn btn-outline-secondary btn-vista" data-vista-btn="cards" title="Vista de tarjetas"><i class="bi bi-grid-3x3-gap"></i></button>
+        <button type="button" class="btn btn-outline-secondary btn-vista" data-vista-btn="tabla" title="Vista de tabla"><i class="bi bi-list-ul"></i></button>
+      </div>
+    </div>
+  </div>
+</form>
+
+{% if torneos %}
+<div id="vista-cards">
+  <div class="row g-4">
+    {% for torneo in torneos %}
+    <div class="col-md-6 col-xl-4 fade-up" style="--i: {{ forloop.counter0 }}">
+      <div class="card card-torneo h-100 estado-{{ torneo.estado }}">
+        <div class="card-body p-4">
+          <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
+            <span class="badge badge-juego rounded-pill px-3 py-2"><i class="bi bi-controller me-1"></i>{{ torneo.juego.nombre }}</span>
+            <span class="badge badge-estado badge-{{ torneo.estado }} rounded-pill px-3 py-2">{{ torneo.get_estado_display }}</span>
+          </div>
+          <h2 class="h5 fw-bold mb-1"><a class="stretched-link text-decoration-none text-body" href="{% url 'torneo_detail' torneo.pk %}">{{ torneo.nombre }}</a></h2>
+          <p class="small text-secondary mb-3">{{ torneo.texto_tiempo }}</p>
+          {% if torneo.estado == 'EN_CURSO' %}
+          <div class="progress mb-3" role="progressbar" aria-valuenow="{{ torneo.progreso }}" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" style="width: {{ torneo.progreso }}%"></div></div>
+          {% endif %}
+          <div class="vstack gap-2">
+            <div class="dato"><i class="bi bi-calendar-event"></i>{{ torneo.fecha_inicio|date:"d M Y" }} → {{ torneo.fecha_fin|date:"d M Y" }}</div>
+            <div class="dato"><i class="bi bi-people"></i>{{ torneo.max_participantes }} cupos</div>
+          </div>
+        </div>
+        <div class="card-footer bg-transparent border-0 px-4 pb-4 pt-0 d-flex justify-content-between align-items-center">
+          <div class="premio text-gradient">${{ torneo.premio|clp }}</div>
+          <div class="acciones d-flex gap-1">
+            {% if user.is_authenticated %}
+            <form method="post" action="{% url 'torneo_toggle' torneo.pk %}">
+              {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <button type="submit" class="btn btn-sm {% if torneo.activo %}btn-outline-success{% else %}btn-outline-secondary{% endif %}" data-bs-toggle="tooltip" title="{% if torneo.activo %}Activo: clic para desactivar{% else %}Inactivo: clic para activar{% endif %}">
+                <i class="bi {% if torneo.activo %}bi-toggle-on{% else %}bi-toggle-off{% endif %}"></i>
+              </button>
+            </form>
+            <a href="{% url 'torneo_update' torneo.pk %}" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="Editar"><i class="bi bi-pencil-square"></i></a>
+            <a href="{% url 'torneo_delete' torneo.pk %}" class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="Eliminar"><i class="bi bi-trash3"></i></a>
+            {% else %}
+            <span class="badge {% if torneo.activo %}badge-on{% else %}badge-off{% endif %} rounded-pill px-3 py-2">{% if torneo.activo %}Activo{% else %}Inactivo{% endif %}</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div id="vista-tabla">
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th class="ps-4">Torneo</th><th>Juego</th><th>Fechas</th><th class="text-end">Premio</th><th class="text-end">Cupos</th><th>Estado</th><th>Activo</th>
+            {% if user.is_authenticated %}<th class="text-end pe-4">Acciones</th>{% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for torneo in torneos %}
+          <tr>
+            <td class="ps-4 fw-semibold"><a class="text-decoration-none" href="{% url 'torneo_detail' torneo.pk %}">{{ torneo.nombre }}</a><div class="small text-secondary fw-normal">{{ torneo.texto_tiempo }}</div></td>
+            <td><span class="badge badge-juego rounded-pill">{{ torneo.juego.nombre }}</span></td>
+            <td class="small">{{ torneo.fecha_inicio|date:"d/m/Y" }} → {{ torneo.fecha_fin|date:"d/m/Y" }}</td>
+            <td class="text-end fw-semibold">${{ torneo.premio|clp }}</td>
+            <td class="text-end">{{ torneo.max_participantes }}</td>
+            <td><span class="badge badge-estado badge-{{ torneo.estado }} rounded-pill">{{ torneo.get_estado_display }}</span></td>
+            <td><span class="badge {% if torneo.activo %}badge-on{% else %}badge-off{% endif %} rounded-pill">{% if torneo.activo %}Activo{% else %}Inactivo{% endif %}</span></td>
+            {% if user.is_authenticated %}
+            <td class="text-end pe-4">
+              <div class="d-inline-flex gap-1">
+                <form method="post" action="{% url 'torneo_toggle' torneo.pk %}">
+                  {% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+                  <button type="submit" class="btn btn-sm {% if torneo.activo %}btn-outline-success{% else %}btn-outline-secondary{% endif %}" title="Activar / desactivar"><i class="bi {% if torneo.activo %}bi-toggle-on{% else %}bi-toggle-off{% endif %}"></i></button>
+                </form>
+                <a href="{% url 'torneo_update' torneo.pk %}" class="btn btn-sm btn-outline-primary" title="Editar"><i class="bi bi-pencil-square"></i></a>
+                <a href="{% url 'torneo_delete' torneo.pk %}" class="btn btn-sm btn-outline-danger" title="Eliminar"><i class="bi bi-trash3"></i></a>
+              </div>
+            </td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% if is_paginated %}
+<nav class="mt-4" aria-label="Paginación">
+  <ul class="pagination justify-content-center mb-0">
+    <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+      <a class="page-link" href="{% if page_obj.has_previous %}{% querystring page=page_obj.previous_page_number %}{% else %}#{% endif %}" aria-label="Anterior"><i class="bi bi-chevron-left"></i></a>
+    </li>
+    {% for p in paginas %}
+      {% if p.ell %}
+        <li class="page-item disabled"><span class="page-link">…</span></li>
+      {% else %}
+        <li class="page-item {% if p.n == page_obj.number %}active{% endif %}"><a class="page-link" href="{% querystring page=p.n %}">{{ p.n }}</a></li>
+      {% endif %}
+    {% endfor %}
+    <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+      <a class="page-link" href="{% if page_obj.has_next %}{% querystring page=page_obj.next_page_number %}{% else %}#{% endif %}" aria-label="Siguiente"><i class="bi bi-chevron-right"></i></a>
+    </li>
+  </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="card">
+  <div class="card-body text-center py-5">
+    <i class="bi bi-inbox display-4 text-secondary d-block mb-3"></i>
+    <h2 class="h5">{% if hay_filtros %}Ningún torneo coincide con tu búsqueda{% else %}No hay torneos registrados{% endif %}</h2>
+    <p class="text-secondary mb-4">
+      {% if hay_filtros %}Prueba con otros filtros o límpialos para ver todo.
+      {% elif user.is_authenticated %}Comienza creando un nuevo torneo asociado a un juego.
+      {% else %}Inicia sesión para registrar torneos.{% endif %}
+    </p>
+    {% if hay_filtros %}<a class="btn btn-outline-primary" href="{% url 'torneo_list' %}">Limpiar filtros</a>
+    {% elif user.is_authenticated %}<a class="btn btn-primary" href="{% url 'torneo_create' %}"><i class="bi bi-plus-lg me-1"></i> Nuevo torneo</a>{% endif %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

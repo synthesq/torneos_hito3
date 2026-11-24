@@ -1,0 +1,39 @@
+{% extends 'torneos/base.html' %}
+{% load static %}
+{% block title %}Iniciar sesión{% endblock %}
+{% block content %}
+<div class="login-wrap">
+  <div class="card login-card shadow-lg">
+    <div class="card-body p-4 p-md-5">
+      <div class="text-center mb-4">
+        <img class="login-logo mb-3" src="{% static 'img/logo.svg' %}" alt="Logo SynthesQ">
+        <h1 class="h4 fw-bold mb-1">Bienvenido de vuelta</h1>
+        <p class="text-secondary small mb-0">Inicia sesión para crear, editar y eliminar torneos.</p>
+      </div>
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next }}">
+        {% if form.errors %}
+          <div class="alert alert-danger d-flex align-items-center py-2" role="alert">
+            <i class="bi bi-exclamation-octagon-fill me-2"></i>
+            <div>Usuario o contraseña incorrectos. Inténtalo de nuevo.</div>
+          </div>
+        {% endif %}
+        <div class="mb-3">
+          <label class="form-label" for="{{ form.username.id_for_label }}">Usuario</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-person"></i></span>{{ form.username }}
+          </div>
+        </div>
+        <div class="mb-4">
+          <label class="form-label" for="{{ form.password.id_for_label }}">Contraseña</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-lock"></i></span>{{ form.password }}
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">Ingresar</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
